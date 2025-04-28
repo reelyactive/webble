@@ -11,6 +11,7 @@ let webble = (function() {
 
   // Check if Web Bluetooth is available on this platform
   let isAvailable = function(callback) {
+    if(!navigator.bluetooth) { return callback(false); }
     navigator.bluetooth.getAvailability().then((isAvailable) => {
       return callback(isAvailable);
     });

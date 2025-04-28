@@ -27,13 +27,18 @@ webble.isAvailable((isAvailable) => {
 // Handle button clicks
 webbleconnect.addEventListener('click', handleConnectButton);
 webbledisconnect.addEventListener('click', handleDisconnectButton);
+webbleobserve.addEventListener('click', handleObserveButton);
 
 // Handle webble events
 webble.on('connect', (device) => {
   peripheral = device;
   webbleconnect.disabled = true;
   webbledisconnect.disabled = false;
+  webbleobserve.disabled = true;
   webbledevice.textContent = JSON.stringify(peripheral, null, 2);
+});
+webble.on('advertisement', (event) => {
+  webbledevice.textContent = JSON.stringify(event, null, 2);
 });
 webble.on('disconnect', () => {
   peripheral = null;
@@ -59,6 +64,21 @@ function handleConnectButton() {
 // Handle a disconnect button click
 function handleDisconnectButton() {
   webble.disconnect();
+}
+
+// Handle an observe button click
+function handleObserveButton() {
+  clearWebbleError();
+
+  webble.requestDeviceAndObserve(REQUEST_OPTIONS, (error) => {
+    if(error) { return handleWebbleError(error); }
+    else {
+      webbleconnect.disabled = true;
+      webbledisconnect.disabled = true;
+      webbleobserve.disabled = true;
+      webbledevice.textContent = 'Listening for advertisements...';
+    }
+  });
 }
 
 // Clear a webble error

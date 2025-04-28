@@ -7,7 +7,7 @@ let webble = (function() {
 
   // Internal variables
   let device;
-  let eventCallbacks = { connect: [], disconnect: [] };
+  let eventCallbacks = { connect: [], advertisement: [], disconnect: [] };
 
   // Check if Web Bluetooth is available on this platform
   let isAvailable = function(callback) {
@@ -15,6 +15,25 @@ let webble = (function() {
     navigator.bluetooth.getAvailability().then((isAvailable) => {
       return callback(isAvailable);
     });
+  }
+
+  // Request a device and watch advertisements
+  // TODO: validate that watchAdvertisements is still supported by Chrome
+  // May require flag #enable-web-bluetooth-new-permissions-backend
+  let requestDeviceAndObserve = function(options, callback) {
+    options = options || {};
+
+    navigator.bluetooth.requestDevice(options)
+    .then((requestedDevice) => {
+      device = {};
+      requestedDevice.addEventListener('advertisementreceived',
+                                       handleAdvertisement);
+      return requestedDevice.watchAdvertisements();
+    })
+    .then(() => {
+      return callback(null);
+    })
+    .catch(error => { return callback(error); });
   }
 
   // Request a device and connect
@@ -99,6 +118,11 @@ let webble = (function() {
     if(device.server.connected) { device.server.disconnect(); }
   }
 
+  // Handle an advertisement
+  function handleAdvertisement(event) {
+    eventCallbacks['advertisement'].forEach(callback => callback());
+  }
+
   // Handle device disconnection
   function handleDisconnect() {
     eventCallbacks['disconnect'].forEach(callback => callback());
@@ -122,6 +146,7 @@ let webble = (function() {
     on: setEventCallback,
     readCharacteristic: readCharacteristic,
     requestDeviceAndConnect: requestDeviceAndConnect,
+    requestDeviceAndObserve: requestDeviceAndObserve,
     writeCharacteristic: writeCharacteristic
   }
 
